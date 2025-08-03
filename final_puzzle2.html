@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>4-Stage Jigsaw Puzzle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #puzzle {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      grid-template-rows: repeat(4, 100px);
+      gap: 2px;
+      margin: 20px auto;
+      width: 408px;
+    }
+    .tile {
+      width: 100px;
+      height: 100px;
+      background-size: 400px 400px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      cursor: move;
+    }
+    #originalImage img {
+      margin-top: 20px;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>4-Stage Aircraft Jigsaw Puzzle</h2>
+  <div id="stageInfo">Stage 1 of 4</div>
+  <div id="originalImage"></div>
+  <div id="puzzle"></div>
+  <div id="message"></div>
+
+  <script>
+    const puzzle = document.getElementById('puzzle');
+    const originalImage = document.getElementById('originalImage');
+    const message = document.getElementById('message');
+    const stageInfo = document.getElementById('stageInfo');
+
+    const imageUrls = [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Air_Force_One_over_Mt._Rushmore.jpg/960px-Air_Force_One_over_Mt._Rushmore.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/bb/Airplane_pushing_vehicle.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/JetBlue292Landing.jpg/500px-JetBlue292Landing.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/AD-1_ObliqueWing_60deg_19800701.jpg/960px-AD-1_ObliqueWing_60deg_19800701.jpg"
+    ];
+
+    let currentStage = 0;
+    let startTime = 0;
+
+    window.onload = () => {
+      loadStage(currentStage);
+    };
+
+    function loadStage(index) {
+      stageInfo.textContent = `Stage ${index + 1} of 4`;
+      message.textContent = "";
+      puzzle.innerHTML = "";
+      originalImage.innerHTML = `<img src="${imageUrls[index]}" width="400" height="400">`;
+
+      setTimeout(() => {
+        originalImage.innerHTML = "";
+        startTime = Date.now();
+        createPuzzle(imageUrls[index]);
+      }, 3000);
+    }
+
+    function createPuzzle(url) {
+      const size = 4;
+      const tiles = [];
+
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.style.backgroundImage = `url('${url}')`;
+          tile.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+          tile.dataset.correctPosition = `${row}-${col}`;
+          tiles.push(tile);
+        }
+      }
+
+      shuffleArray(tiles);
+      puzzle.innerHTML = "";
+      tiles.forEach(tile => puzzle.appendChild(tile));
+      enableDragDrop();
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function enableDragDrop() {
+      let dragged = null;
+
+      puzzle.querySelectorAll('.tile').forEach(tile => {
+        tile.draggable = true;
+
+        tile.addEventListener('dragstart', e => {
+          dragged = tile;
+        });
+
+        tile.addEventListener('dragover', e => {
+          e.preventDefault();
+        });
+
+        tile.addEventListener('drop', e => {
+          e.preventDefault();
+          if (dragged && dragged !== tile) {
+            const draggedIndex = Array.from(puzzle.children).indexOf(dragged);
+            const targetIndex = Array.from(puzzle.children).indexOf(tile);
+
+            if (draggedIndex < targetIndex) {
+              puzzle.insertBefore(dragged, tile.nextSibling);
+              puzzle.insertBefore(tile, puzzle.children[draggedIndex]);
+            } else {
+              puzzle.insertBefore(tile, dragged.nextSibling);
+              puzzle.insertBefore(dragged, puzzle.children[targetIndex]);
+            }
+
+            checkIfSolved();
+          }
+        });
+      });
+    }
+
+    function checkIfSolved() {
+      const tiles = Array.from(puzzle.children);
+      let solved = true;
+
+      tiles.forEach((tile, index) => {
+        const row = Math.floor(index / 4);
+        const col = index % 4;
+        const expected = `${row}-${col}`;
+        if (tile.dataset.correctPosition !== expected) {
+          solved = false;
+        }
+      });
+
+      if (solved) {
+        const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+        message.textContent = `🎉 Stage ${currentStage + 1} Complete! Time taken: ${timeTaken} seconds`;
+
+        if (currentStage < imageUrls.length - 1) {
+          currentStage++;
+          setTimeout(() => loadStage(currentStage), 3000);
+        } else {
+          stageInfo.textContent = `✅ All stages completed!`;
+          message.textContent += " 🎊 Great job!";
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
